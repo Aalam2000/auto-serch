@@ -7,7 +7,9 @@
 	"assets": { "directory": "./public" },
 	"vars": {
 		// Only this Telegram user can use the bot and the Mini App
-		"OWNER_TG_ID": "382253447"
+		"OWNER_TG_ID": "382253447",
+		// Turnstile site key is public (shown in the page). The secret goes to .dev.vars
+		"TURNSTILE_SITE_KEY": "0x4AAAAAAGKIWJ3BvDTJKfDw"
 	},
 	"d1_databases": [
 		{

@@ -5,4 +5,6 @@ export interface Env {
   ADMIN_KEY: string; // protects the test endpoints
   GEMINI_API_KEY: string;
   TELEGRAM_WEBHOOK_SECRET: string;
+  TURNSTILE_SITE_KEY: string; // public, in wrangler.jsonc
+  TURNSTILE_SECRET: string;
 }

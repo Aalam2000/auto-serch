@@ -2,186 +2,475 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Auto Serch</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Бот, который сам ищет машину на Turbo.az</title>
+<meta name="description" content="Telegram-бот с ИИ: следит за Turbo.az, смотрит все фото и присылает только живые машины. Делаю такие программы на заказ.">
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <style>
   :root {
-    --bg: var(--tg-theme-bg-color, #fff);
-    --text: var(--tg-theme-text-color, #111);
-    --hint: var(--tg-theme-hint-color, #888);
-    --link: var(--tg-theme-link-color, #2a7ae2);
-    --card: var(--tg-theme-secondary-bg-color, #f2f2f5);
-    --btn: var(--tg-theme-button-color, #2a7ae2);
-    --btn-text: var(--tg-theme-button-text-color, #fff);
+    --bg: #0f1115; --panel: #171a21; --line: #262b36; --text: #e9ecf2; --muted: #9aa3b2;
+    --accent: #f5b301; --accent-ink: #1a1400; --ok: #2ecc71; --bad: #e74c3c;
+    --radius: 16px;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; font: 15px/1.4 system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); }
-  header { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px;
-           padding: 10px 12px; background: var(--bg); border-bottom: 1px solid var(--card); }
-  header h1 { font-size: 17px; margin: 0; flex: 1; }
-  .lamp { width: 14px; height: 14px; border-radius: 50%; background: var(--hint); flex: none; }
-  .lamp.green { background: #2ecc71; box-shadow: 0 0 6px #2ecc71; }
-  .lamp.yellow { background: #f1c40f; box-shadow: 0 0 6px #f1c40f; }
-  .lamp.red { background: #e74c3c; box-shadow: 0 0 6px #e74c3c; }
-  #health-text { font-size: 12px; color: var(--hint); padding: 4px 12px 0; }
-  main { padding: 8px 12px 24px; }
-  .section { margin: 14px 0 6px; font-size: 13px; color: var(--hint); text-transform: uppercase; }
-  .row { display: flex; gap: 10px; padding: 8px; margin-bottom: 8px; border-radius: 10px; background: var(--card); cursor: pointer; }
-  .row img { width: 92px; height: 70px; object-fit: cover; border-radius: 8px; flex: none; background: #ccc; }
-  .row .t { font-weight: 600; }
-  .row .s { font-size: 13px; color: var(--hint); }
-  .badge { display: inline-block; min-width: 34px; padding: 1px 6px; border-radius: 6px; text-align: center;
-           font-weight: 700; color: #fff; background: #888; }
-  .b-hi { background: #27ae60; } .b-mid { background: #e6a700; } .b-lo { background: #c0392b; }
-  .empty { color: var(--hint); padding: 20px 0; text-align: center; }
-  .back { border: 0; background: none; color: var(--link); font-size: 15px; padding: 0; cursor: pointer; }
-  .gallery { display: flex; gap: 6px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -12px; padding: 0 12px; }
-  .gallery img { height: 220px; border-radius: 8px; scroll-snap-align: start; flex: none; }
-  .kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font-size: 14px; }
-  .kv b { color: var(--hint); font-weight: 400; }
-  .box { background: var(--card); border-radius: 10px; padding: 10px; margin-top: 10px; }
-  .actions { display: flex; gap: 8px; margin-top: 12px; }
-  .actions button, .actions a { flex: 1; padding: 10px; border: 0; border-radius: 10px; font-size: 15px;
-           text-align: center; text-decoration: none; cursor: pointer; background: var(--card); color: var(--text); }
-  .actions .on { background: var(--btn); color: var(--btn-text); }
-  .err { color: #e74c3c; padding: 20px 0; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  a { color: var(--accent); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+
+  /* top bar */
+  .top { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; }
+  .logo { font-weight: 800; letter-spacing: .3px; }
+  .logo span { color: var(--accent); }
+  .langs { display: flex; gap: 4px; }
+  .langs button { background: none; border: 1px solid var(--line); color: var(--muted);
+                  padding: 4px 10px; border-radius: 8px; cursor: pointer; font: inherit; font-size: 14px; }
+  .langs button.on { border-color: var(--accent); color: var(--accent); }
+
+  /* hero */
+  .hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; align-items: center; padding: 40px 0 70px; }
+  .hero h1 { font-size: clamp(32px, 5vw, 52px); line-height: 1.1; margin: 0 0 18px; letter-spacing: -.5px; }
+  .hero h1 em { font-style: normal; color: var(--accent); }
+  .hero p.lead { color: var(--muted); font-size: 19px; margin: 0 0 28px; }
+  .cta { display: inline-block; background: var(--accent); color: var(--accent-ink); font-weight: 700;
+         padding: 14px 26px; border-radius: 12px; text-decoration: none; }
+  .cta.ghost { background: none; color: var(--text); border: 1px solid var(--line); margin-left: 8px; }
+
+  /* phone mockup */
+  .phone { background: #1d2733; border-radius: 28px; padding: 14px; border: 1px solid #2b3846;
+           box-shadow: 0 30px 80px rgba(0,0,0,.45); max-width: 360px; margin-left: auto; }
+  .chat-head { display: flex; align-items: center; gap: 10px; padding: 4px 6px 12px; border-bottom: 1px solid #2b3846; }
+  .ava { width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: var(--accent-ink);
+         display: grid; place-items: center; font-weight: 800; }
+  .chat-head small { display: block; color: #7f93a8; font-size: 12px; }
+  .msg { background: #182533; border-radius: 14px; margin-top: 12px; overflow: hidden; font-size: 14px; }
+  .msg .photo { height: 150px; background:
+      linear-gradient(160deg, rgba(245,179,1,.15), transparent 60%),
+      repeating-linear-gradient(90deg, #22303f 0 14px, #1f2c3a 14px 28px); display: grid; place-items: center;
+      color: #6f8296; font-size: 13px; }
+  .msg .body { padding: 10px 12px; }
+  .msg b.score { background: var(--ok); color: #062b14; padding: 0 6px; border-radius: 6px; }
+  .msg .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 0 8px 8px; }
+  .msg .btns span { background: #2b5278; text-align: center; border-radius: 8px; padding: 7px; }
+  .sample { text-align: center; color: #6f8296; font-size: 12px; margin-top: 8px; }
+
+  section { padding: 60px 0; border-top: 1px solid var(--line); }
+  h2 { font-size: clamp(26px, 3.5vw, 36px); margin: 0 0 10px; letter-spacing: -.3px; }
+  .sub { color: var(--muted); margin: 0 0 32px; max-width: 680px; }
+
+  /* problem */
+  .pains { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .pain { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+  .pain .ic { font-size: 26px; }
+  .pain h3 { margin: 8px 0 6px; font-size: 18px; }
+  .pain p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  /* steps */
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; counter-reset: s; }
+  .step { position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px 18px 18px; }
+  .step::before { counter-increment: s; content: counter(s); position: absolute; top: -14px; left: 18px;
+                  width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: var(--accent-ink);
+                  display: grid; place-items: center; font-weight: 800; font-size: 14px; }
+  .step h3 { margin: 4px 0 6px; font-size: 17px; }
+  .step p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  /* rating mockup */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+  .rating { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; }
+  .rating .bar { display: flex; align-items: center; gap: 8px; font-weight: 700; padding: 4px 4px 12px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+  .rating .bar small { color: var(--muted); font-weight: 400; margin-left: auto; font-size: 12px; }
+  .car { display: flex; gap: 12px; align-items: center; background: #1f232c; border-radius: 12px; padding: 10px; margin-bottom: 8px; }
+  .car .thumb { width: 64px; height: 48px; border-radius: 8px; flex: none;
+                background: repeating-linear-gradient(90deg, #2a303b 0 8px, #262b35 8px 16px); }
+  .car .n { font-weight: 600; font-size: 15px; }
+  .car .m { color: var(--muted); font-size: 13px; }
+  .car .sc { margin-left: auto; font-weight: 800; padding: 2px 8px; border-radius: 8px; color: #fff; }
+  .hi { background: #27ae60; } .mid { background: #d49b00; }
+  ul.ticks { list-style: none; padding: 0; margin: 0; }
+  ul.ticks li { padding-left: 28px; position: relative; margin-bottom: 12px; }
+  ul.ticks li::before { content: "✓"; position: absolute; left: 0; color: var(--accent); font-weight: 800; }
+
+  /* tech */
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .chip { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 8px 14px; font-size: 15px; }
+  .chip b { color: var(--accent); font-weight: 600; }
+
+  /* services */
+  .services { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .svc { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; }
+  .svc h3 { margin: 0 0 6px; font-size: 18px; }
+  .svc p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  /* form */
+  form { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; max-width: 640px; }
+  label { display: block; font-size: 14px; color: var(--muted); margin: 0 0 6px; }
+  input, textarea { width: 100%; background: #0f1218; border: 1px solid var(--line); color: var(--text);
+                    border-radius: 10px; padding: 12px 14px; font: inherit; margin-bottom: 16px; }
+  input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  textarea { min-height: 120px; resize: vertical; }
+  button.send { background: var(--accent); color: var(--accent-ink); border: 0; font: inherit; font-weight: 700;
+                padding: 14px 26px; border-radius: 12px; cursor: pointer; }
+  button.send:disabled { opacity: .5; cursor: default; }
+  .note { color: var(--muted); font-size: 13px; margin-top: 12px; }
+  .status { margin-top: 14px; font-weight: 600; }
+  .status.ok { color: var(--ok); } .status.err { color: var(--bad); }
+  #captcha { margin-bottom: 16px; min-height: 65px; }
+
+  footer { border-top: 1px solid var(--line); padding: 30px 0 40px; color: var(--muted); font-size: 14px; }
+
+  @media (max-width: 860px) {
+    .hero, .split { grid-template-columns: 1fr; }
+    .phone { margin: 0 auto; }
+    .pains, .services { grid-template-columns: 1fr; }
+    .steps { grid-template-columns: 1fr 1fr; gap: 26px 16px; }
+    .cta.ghost { margin: 10px 0 0; }
+  }
+  @media (max-width: 480px) { .steps { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
-<header>
-  <span class="lamp" id="lamp" title=""></span>
-  <h1 id="title">Рейтинг</h1>
-</header>
-<div id="health-text"></div>
-<main id="app"><div class="empty">Загрузка…</div></main>
+
+<div class="wrap">
+  <div class="top">
+    <div class="logo">Bona<span>PLUS</span></div>
+    <div class="langs" id="langs">
+      <button data-lang="ru">RU</button>
+      <button data-lang="az">AZ</button>
+      <button data-lang="en">EN</button>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div>
+      <h1 data-i="hero_title">Бот, который <em>сам ищет</em> вам машину на Turbo.az</h1>
+      <p class="lead" data-i="hero_lead">Следит за объявлениями круглосуточно, отбрасывает лишнее, а искусственный интеллект смотрит каждое фото: ржавчину, следы ДТП, реальный износ. В Telegram приходят только живые варианты.</p>
+      <a class="cta" href="#order" data-i="cta_order">Заказать такого бота</a>
+      <a class="cta ghost" href="#how" data-i="cta_how">Как это работает</a>
+    </div>
+
+    <div>
+      <div class="phone">
+        <div class="chat-head">
+          <div class="ava">B</div>
+          <div><b>BonaPLUS bot</b><small data-i="bot_online">бот</small></div>
+        </div>
+        <div class="msg">
+          <div class="photo" data-i="photo_ph">фото автомобиля</div>
+          <div class="body">
+            <b>Mercedes E 220, 1994</b> · <span data-i="petrol">бензин</span><br>
+            💰 <b>3600 ₼</b> · <span data-i="credit">кредит</span><br>
+            📍 <span data-i="baku">Баку</span> · 0 km<br>
+            ⭐ <span data-i="score">Оценка</span>: <b class="score">68</b>/100 · ❄️<br><br>
+            <span data-i="msg_summary">Кузов ровный, зазоры в норме. Небольшие пузыри на задних арках. Салон по износу похож на 400 тыс. км. Проверить пороги и домкратные гнёзда.</span>
+          </div>
+          <div class="btns"><span data-i="btn_like">👍 Интересно</span><span data-i="btn_nope">👎 Нет</span></div>
+        </div>
+      </div>
+      <div class="sample" data-i="sample">пример сообщения</div>
+    </div>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <h2 data-i="pain_title">Почему искать машину вручную так тяжело</h2>
+    <p class="sub" data-i="pain_sub">Хорошая машина по нормальной цене уходит за день. Пока вы листаете сотни объявлений, её уже купили.</p>
+    <div class="pains">
+      <div class="pain"><div class="ic">📋</div><h3 data-i="p1_t">Сотни объявлений</h3><p data-i="p1_d">Каждый день новые. Половина не подходит по мотору, году или цене, но их всё равно приходится открывать.</p></div>
+      <div class="pain"><div class="ic">🔢</div><h3 data-i="p2_t">Пробегу не верят</h3><p data-i="p2_d">У старых машин цифра на одометре почти ничего не значит. Реальный износ видно только по рулю, педалям и сиденью.</p></div>
+      <div class="pain"><div class="ic">🔧</div><h3 data-i="p3_t">Ржавчина прячется на фото</h3><p data-i="p3_d">Пузыри на арках, гнилые пороги, следы сварки и перекраса легко пропустить, когда фото десятки.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <h2 data-i="how_title">Как работает бот</h2>
+    <p class="sub" data-i="how_sub">Всё происходит автоматически каждые 15 минут. Вы только нажимаете 👍 или 👎.</p>
+    <div class="steps">
+      <div class="step"><h3 data-i="s1_t">Следит</h3><p data-i="s1_d">Проверяет ваши поиски на Turbo.az и находит новые объявления и снижение цены.</p></div>
+      <div class="step"><h3 data-i="s2_t">Отсеивает</h3><p data-i="s2_d">Убирает неподходящие модели, моторы, цены и слишком далёкие города.</p></div>
+      <div class="step"><h3 data-i="s3_t">Смотрит фото</h3><p data-i="s3_d">ИИ разбирает все фото и текст продавца: кузов, ржавчина, ДТП, салон, кондиционер.</p></div>
+      <div class="step"><h3 data-i="s4_t">Присылает лучшее</h3><p data-i="s4_d">В Telegram приходят только сильные варианты. Чем дальше город, тем выше планка.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap split">
+    <div>
+      <h2 data-i="rate_title">Рейтинг всегда под рукой</h2>
+      <p class="sub" data-i="rate_sub">Мини-приложение прямо внутри Telegram.</p>
+      <ul class="ticks">
+        <li data-i="r1">Лучшие машины на сегодня сверху: учитываются состояние, цена и расстояние</li>
+        <li data-i="r2">Все фото, разбор ИИ и история цены в одной карточке</li>
+        <li data-i="r3">Лампочка показывает, работает ли бот прямо сейчас</li>
+        <li data-i="r4">Фильтры, приоритеты и инструкцию для ИИ можно менять самому</li>
+      </ul>
+    </div>
+    <div>
+      <div class="rating">
+        <div class="bar"><span class="dot"></span><span data-i="rating_word">Рейтинг</span><small data-i="rating_ok">работает · 3 мин назад</small></div>
+        <div class="car"><div class="thumb"></div><div><div class="n">1. Mercedes E 220, 1994</div><div class="m">3600 ₼ · <span data-i="baku">Баку</span> · ❄️</div></div><span class="sc hi">68</span></div>
+        <div class="car"><div class="thumb"></div><div><div class="n">2. Mercedes 300 D, 1992</div><div class="m">3800 ₼ · <span data-i="sumgait">Сумгаит</span></div></div><span class="sc hi">71</span></div>
+        <div class="car"><div class="thumb"></div><div><div class="n">3. Mercedes E 220, 1993</div><div class="m">3400 ₼ · <span data-i="baku">Баку</span></div></div><span class="sc mid">52</span></div>
+      </div>
+      <div class="sample" data-i="sample_rating">пример экрана</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2 data-i="tech_title">На чём сделано</h2>
+    <p class="sub" data-i="tech_sub">Работает в облаке без своего сервера. Расходы на запуск можно держать близко к нулю.</p>
+    <div class="chips">
+      <span class="chip"><b>Cloudflare</b> Workers · D1</span>
+      <span class="chip"><b>Google Gemini</b> · <span data-i="vision">анализ фото</span></span>
+      <span class="chip"><b>Telegram</b> Bot · Mini App</span>
+      <span class="chip"><b>TypeScript</b></span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2 data-i="svc_title">Делаю такие программы на заказ</h2>
+    <p class="sub" data-i="svc_sub">Не только для машин. Любой сайт с объявлениями, ценами или новостями можно превратить в бота, который сам приносит нужное.</p>
+    <div class="services">
+      <div class="svc"><h3 data-i="v1_t">Мониторинг сайтов</h3><p data-i="v1_d">Недвижимость, техника, вакансии, цены конкурентов. Уведомления о новом и о снижении цены.</p></div>
+      <div class="svc"><h3 data-i="v2_t">Telegram-боты с ИИ</h3><p data-i="v2_d">Боты, которые понимают текст и фото, отвечают клиентам и принимают заявки.</p></div>
+      <div class="svc"><h3 data-i="v3_t">Мини-приложения в Telegram</h3><p data-i="v3_d">Каталоги, личные кабинеты, учёт и отчёты прямо в мессенджере.</p></div>
+      <div class="svc"><h3 data-i="v4_t">Автоматизация рутины</h3><p data-i="v4_d">Таблицы, выгрузки, сводки и напоминания, которые делаются сами.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="order">
+  <div class="wrap">
+    <h2 data-i="form_title">Оставить заявку</h2>
+    <p class="sub" data-i="form_sub">Опишите, что нужно. Я отвечу, сколько это займёт и сколько будет стоить.</p>
+    <form id="form" novalidate>
+      <label for="f-name" data-i="f_name">Имя</label>
+      <input id="f-name" name="name" maxlength="100" required autocomplete="name">
+      <label for="f-contact" data-i="f_contact">Telegram или телефон</label>
+      <input id="f-contact" name="contact" maxlength="100" required>
+      <label for="f-msg" data-i="f_msg">Что нужно сделать</label>
+      <textarea id="f-msg" name="message" maxlength="2000" required></textarea>
+      <div id="captcha"></div>
+      <button class="send" type="submit" id="send" data-i="f_send">Отправить</button>
+      <div class="note" data-i="f_note">Данные из формы нужны только чтобы связаться с вами по заявке.</div>
+      <div class="status" id="status"></div>
+    </form>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">© BonaPLUS · <span data-i="footer">Боты и автоматизация на заказ</span></div>
+</footer>
 
 <script>
-const tg = window.Telegram && window.Telegram.WebApp;
-if (tg) { tg.ready(); tg.expand(); }
-const initData = tg ? tg.initData : "";
-const app = document.getElementById("app");
+const T = {
+  ru: {
+    _title: "Бот, который сам ищет машину на Turbo.az",
+    hero_title: 'Бот, который <em>сам ищет</em> вам машину на Turbo.az',
+    hero_lead: "Следит за объявлениями круглосуточно, отбрасывает лишнее, а искусственный интеллект смотрит каждое фото: ржавчину, следы ДТП, реальный износ. В Telegram приходят только живые варианты.",
+    cta_order: "Заказать такого бота", cta_how: "Как это работает",
+    bot_online: "бот", photo_ph: "фото автомобиля", petrol: "бензин", credit: "кредит", baku: "Баку", sumgait: "Сумгаит",
+    score: "Оценка",
+    msg_summary: "Кузов ровный, зазоры в норме. Небольшие пузыри на задних арках. Салон по износу похож на 400 тыс. км. Проверить пороги и домкратные гнёзда.",
+    btn_like: "👍 Интересно", btn_nope: "👎 Нет", sample: "пример сообщения",
+    pain_title: "Почему искать машину вручную так тяжело",
+    pain_sub: "Хорошая машина по нормальной цене уходит за день. Пока вы листаете сотни объявлений, её уже купили.",
+    p1_t: "Сотни объявлений", p1_d: "Каждый день новые. Половина не подходит по мотору, году или цене, но их всё равно приходится открывать.",
+    p2_t: "Пробегу не верят", p2_d: "У старых машин цифра на одометре почти ничего не значит. Реальный износ видно только по рулю, педалям и сиденью.",
+    p3_t: "Ржавчина прячется на фото", p3_d: "Пузыри на арках, гнилые пороги, следы сварки и перекраса легко пропустить, когда фото десятки.",
+    how_title: "Как работает бот", how_sub: "Всё происходит автоматически каждые 15 минут. Вы только нажимаете 👍 или 👎.",
+    s1_t: "Следит", s1_d: "Проверяет ваши поиски на Turbo.az и находит новые объявления и снижение цены.",
+    s2_t: "Отсеивает", s2_d: "Убирает неподходящие модели, моторы, цены и слишком далёкие города.",
+    s3_t: "Смотрит фото", s3_d: "ИИ разбирает все фото и текст продавца: кузов, ржавчина, ДТП, салон, кондиционер.",
+    s4_t: "Присылает лучшее", s4_d: "В Telegram приходят только сильные варианты. Чем дальше город, тем выше планка.",
+    rate_title: "Рейтинг всегда под рукой", rate_sub: "Мини-приложение прямо внутри Telegram.",
+    r1: "Лучшие машины на сегодня сверху: учитываются состояние, цена и расстояние",
+    r2: "Все фото, разбор ИИ и история цены в одной карточке",
+    r3: "Лампочка показывает, работает ли бот прямо сейчас",
+    r4: "Фильтры, приоритеты и инструкцию для ИИ можно менять самому",
+    rating_word: "Рейтинг", rating_ok: "работает · 3 мин назад", sample_rating: "пример экрана",
+    tech_title: "На чём сделано", tech_sub: "Работает в облаке без своего сервера. Расходы на запуск можно держать близко к нулю.",
+    vision: "анализ фото",
+    svc_title: "Делаю такие программы на заказ",
+    svc_sub: "Не только для машин. Любой сайт с объявлениями, ценами или новостями можно превратить в бота, который сам приносит нужное.",
+    v1_t: "Мониторинг сайтов", v1_d: "Недвижимость, техника, вакансии, цены конкурентов. Уведомления о новом и о снижении цены.",
+    v2_t: "Telegram-боты с ИИ", v2_d: "Боты, которые понимают текст и фото, отвечают клиентам и принимают заявки.",
+    v3_t: "Мини-приложения в Telegram", v3_d: "Каталоги, личные кабинеты, учёт и отчёты прямо в мессенджере.",
+    v4_t: "Автоматизация рутины", v4_d: "Таблицы, выгрузки, сводки и напоминания, которые делаются сами.",
+    form_title: "Оставить заявку", form_sub: "Опишите, что нужно. Я отвечу, сколько это займёт и сколько будет стоить.",
+    f_name: "Имя", f_contact: "Telegram или телефон", f_msg: "Что нужно сделать", f_send: "Отправить",
+    f_note: "Данные из формы нужны только чтобы связаться с вами по заявке.",
+    st_sending: "Отправляю…", st_ok: "Заявка отправлена. Скоро свяжусь с вами.",
+    st_empty: "Заполните все поля.", st_captcha: "Подтвердите, что вы не робот.", st_err: "Не получилось отправить. Попробуйте ещё раз.",
+    footer: "Боты и автоматизация на заказ",
+  },
+  az: {
+    _title: "Turbo.az-da maşını özü axtaran bot",
+    hero_title: 'Turbo.az-da sizin üçün maşını <em>özü axtaran</em> bot',
+    hero_lead: "Elanları gecə-gündüz izləyir, lazımsızları atır, süni intellekt isə hər fotoya baxır: pas, qəza izləri, real köhnəlmə. Telegram-a yalnız yaxşı variantlar gəlir.",
+    cta_order: "Belə bot sifariş et", cta_how: "Necə işləyir",
+    bot_online: "bot", photo_ph: "avtomobilin fotosu", petrol: "benzin", credit: "kredit", baku: "Bakı", sumgait: "Sumqayıt",
+    score: "Qiymət",
+    msg_summary: "Kuzov düzdür, aralıqlar normaldır. Arxa tağlarda kiçik qabarcıqlar var. Salonun köhnəlməsi 400 min km-ə oxşayır. Astanaları və domkrat yerlərini yoxlayın.",
+    btn_like: "👍 Maraqlıdır", btn_nope: "👎 Yox", sample: "mesaj nümunəsi",
+    pain_title: "Maşını əl ilə axtarmaq niyə çətindir",
+    pain_sub: "Normal qiymətə yaxşı maşın bir günə satılır. Siz yüzlərlə elana baxana qədər onu artıq alırlar.",
+    p1_t: "Yüzlərlə elan", p1_d: "Hər gün yeniləri çıxır. Yarısı mühərrikə, ilə və ya qiymətə görə uyğun deyil, amma yenə də açmaq lazım gəlir.",
+    p2_t: "Yürüşə inanmırlar", p2_d: "Köhnə maşınlarda spidometrdəki rəqəm demək olar heç nə demir. Real köhnəlmə yalnız sükandan, pedallardan və oturacaqdan görünür.",
+    p3_t: "Pas fotoda gizlənir", p3_d: "Tağlarda qabarcıqlar, çürük astanalar, qaynaq və rəngləmə izləri onlarla foto arasında asanlıqla gözdən qaçır.",
+    how_title: "Bot necə işləyir", how_sub: "Hər şey hər 15 dəqiqədən bir avtomatik olur. Siz yalnız 👍 və ya 👎 basırsınız.",
+    s1_t: "İzləyir", s1_d: "Turbo.az-dakı axtarışlarınızı yoxlayır, yeni elanları və qiymət endirimlərini tapır.",
+    s2_t: "Süzür", s2_d: "Uyğun olmayan modelləri, mühərrikləri, qiymətləri və çox uzaq şəhərləri çıxarır.",
+    s3_t: "Fotolara baxır", s3_d: "Süni intellekt bütün fotoları və satıcının mətnini təhlil edir: kuzov, pas, qəza, salon, kondisioner.",
+    s4_t: "Ən yaxşısını göndərir", s4_d: "Telegram-a yalnız güclü variantlar gəlir. Şəhər nə qədər uzaqdırsa, tələb bir o qədər yüksəkdir.",
+    rate_title: "Reytinq həmişə əlinizin altında", rate_sub: "Telegram-ın içində mini tətbiq.",
+    r1: "Bu günün ən yaxşı maşınları yuxarıdadır: vəziyyət, qiymət və məsafə nəzərə alınır",
+    r2: "Bütün fotolar, süni intellektin təhlili və qiymət tarixçəsi bir kartda",
+    r3: "Lampa botun indi işləyib-işləmədiyini göstərir",
+    r4: "Filtrləri, prioritetləri və süni intellekt üçün təlimatı özünüz dəyişə bilərsiniz",
+    rating_word: "Reytinq", rating_ok: "işləyir · 3 dəq əvvəl", sample_rating: "ekran nümunəsi",
+    tech_title: "Nə ilə hazırlanıb", tech_sub: "Öz serveri olmadan buludda işləyir. İşə salma xərclərini sıfıra yaxın saxlamaq olar.",
+    vision: "foto təhlili",
+    svc_title: "Belə proqramları sifarişlə hazırlayıram",
+    svc_sub: "Təkcə maşınlar üçün yox. Elanlar, qiymətlər və ya xəbərlər olan istənilən saytı lazım olanı özü gətirən bota çevirmək olar.",
+    v1_t: "Saytların monitorinqi", v1_d: "Daşınmaz əmlak, texnika, vakansiyalar, rəqiblərin qiymətləri. Yeni elanlar və qiymət endirimi haqqında bildirişlər.",
+    v2_t: "Süni intellektli Telegram botları", v2_d: "Mətni və fotonu başa düşən, müştərilərə cavab verən və sifariş qəbul edən botlar.",
+    v3_t: "Telegram mini tətbiqləri", v3_d: "Kataloqlar, şəxsi kabinetlər, uçot və hesabatlar birbaşa messencerdə.",
+    v4_t: "Gündəlik işlərin avtomatlaşdırılması", v4_d: "Özü hazırlanan cədvəllər, çıxarışlar, xülasələr və xatırlatmalar.",
+    form_title: "Sifariş qoyun", form_sub: "Nə lazım olduğunu yazın. Nə qədər vaxt aparacağını və neçəyə başa gələcəyini deyəcəyəm.",
+    f_name: "Ad", f_contact: "Telegram və ya telefon", f_msg: "Nə etmək lazımdır", f_send: "Göndər",
+    f_note: "Formadakı məlumatlar yalnız sifarişlə bağlı sizinlə əlaqə saxlamaq üçündür.",
+    st_sending: "Göndərilir…", st_ok: "Sifariş göndərildi. Tezliklə sizinlə əlaqə saxlayacağam.",
+    st_empty: "Bütün xanaları doldurun.", st_captcha: "Robot olmadığınızı təsdiqləyin.", st_err: "Göndərmək alınmadı. Yenidən cəhd edin.",
+    footer: "Sifarişlə botlar və avtomatlaşdırma",
+  },
+  en: {
+    _title: "A bot that finds your car on Turbo.az",
+    hero_title: 'A bot that <em>finds your car</em> on Turbo.az by itself',
+    hero_lead: "It watches listings around the clock, drops what does not fit, and AI checks every photo: rust, accident signs, real wear. Only cars worth seeing reach your Telegram.",
+    cta_order: "Order a bot like this", cta_how: "How it works",
+    bot_online: "bot", photo_ph: "car photo", petrol: "petrol", credit: "loan", baku: "Baku", sumgait: "Sumgait",
+    score: "Score",
+    msg_summary: "Straight body, even panel gaps. Small bubbles on the rear arches. Interior wear looks like 400k km. Check the sills and jacking points.",
+    btn_like: "👍 Interesting", btn_nope: "👎 No", sample: "sample message",
+    pain_title: "Why searching for a car by hand is hard",
+    pain_sub: "A good car at a fair price sells in a day. While you scroll through hundreds of listings, someone else buys it.",
+    p1_t: "Hundreds of listings", p1_d: "New ones every day. Half do not fit by engine, year or price, but you still have to open them.",
+    p2_t: "Nobody trusts the mileage", p2_d: "On old cars the odometer means almost nothing. Real wear shows on the wheel, pedals and seat.",
+    p3_t: "Rust hides in photos", p3_d: "Bubbles on arches, rotten sills, welding and repaint marks are easy to miss among dozens of photos.",
+    how_title: "How the bot works", how_sub: "Everything runs automatically every 15 minutes. You just tap 👍 or 👎.",
+    s1_t: "Watches", s1_d: "Checks your Turbo.az searches for new listings and price drops.",
+    s2_t: "Filters", s2_d: "Drops wrong models, engines, prices and cities that are too far.",
+    s3_t: "Looks at photos", s3_d: "AI reads every photo and the seller's text: body, rust, accidents, interior, air conditioning.",
+    s4_t: "Sends the best", s4_d: "Only strong options reach Telegram. The farther the city, the higher the bar.",
+    rate_title: "Your ranking, always at hand", rate_sub: "A mini app right inside Telegram.",
+    r1: "Today's best cars on top, ranked by condition, price and distance",
+    r2: "All photos, the AI review and price history in one card",
+    r3: "A status light shows whether the bot is working right now",
+    r4: "Change filters, priorities and the AI instructions yourself",
+    rating_word: "Ranking", rating_ok: "working · 3 min ago", sample_rating: "sample screen",
+    tech_title: "Built with", tech_sub: "Runs in the cloud with no server of its own. Running costs can stay close to zero.",
+    vision: "photo analysis",
+    svc_title: "I build programs like this to order",
+    svc_sub: "Not only for cars. Any site with listings, prices or news can become a bot that brings you what you need.",
+    v1_t: "Website monitoring", v1_d: "Real estate, electronics, jobs, competitor prices. Alerts on new items and price drops.",
+    v2_t: "Telegram bots with AI", v2_d: "Bots that understand text and photos, answer customers and take orders.",
+    v3_t: "Telegram mini apps", v3_d: "Catalogs, personal accounts, records and reports right in the messenger.",
+    v4_t: "Routine automation", v4_d: "Spreadsheets, exports, summaries and reminders that make themselves.",
+    form_title: "Send a request", form_sub: "Describe what you need. I will tell you how long it takes and what it costs.",
+    f_name: "Name", f_contact: "Telegram or phone", f_msg: "What should be built", f_send: "Send",
+    f_note: "Form data is used only to contact you about your request.",
+    st_sending: "Sending…", st_ok: "Request sent. I will get back to you soon.",
+    st_empty: "Please fill in all fields.", st_captcha: "Please confirm you are not a robot.", st_err: "Could not send. Please try again.",
+    footer: "Bots and automation to order",
+  },
+};
 
-async function api(path, options = {}) {
-  const res = await fetch(path, {
-    ...options,
-    headers: { "Content-Type": "application/json", "X-Telegram-Init-Data": initData, ...(options.headers || {}) },
+let lang = "ru";
+
+function pickLang() {
+  const q = new URLSearchParams(location.search).get("lang");
+  if (q && T[q]) return q;
+  try { const s = localStorage.getItem("lang"); if (s && T[s]) return s; } catch (e) {}
+  const n = (navigator.language || "").slice(0, 2);
+  return T[n] ? n : "ru";
+}
+
+function setLang(l) {
+  lang = l;
+  const t = T[l];
+  document.documentElement.lang = l;
+  document.title = t._title;
+  document.querySelectorAll("[data-i]").forEach((el) => {
+    const v = t[el.dataset.i];
+    if (v === undefined) return;
+    if (el.dataset.i === "hero_title") el.innerHTML = v; else el.textContent = v;
   });
-  if (res.status === 401) throw new Error("Нет доступа. Откройте приложение из бота.");
-  if (!res.ok) throw new Error("Ошибка " + res.status);
-  return res.json();
+  document.querySelectorAll("#langs button").forEach((b) => b.classList.toggle("on", b.dataset.lang === l));
+  try { localStorage.setItem("lang", l); } catch (e) {}
 }
 
-function esc(s) {
-  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-}
+document.querySelectorAll("#langs button").forEach((b) => b.addEventListener("click", () => setLang(b.dataset.lang)));
+setLang(pickLang());
 
-function badge(score) {
-  const cls = score >= 70 ? "b-hi" : score >= 50 ? "b-mid" : "b-lo";
-  return `<span class="badge ${cls}">${score}</span>`;
-}
-
-function openLink(url) {
-  if (tg && tg.openLink) tg.openLink(url); else window.open(url, "_blank");
-}
-
-async function loadHealth() {
+// Turnstile
+let captchaToken = "";
+let widgetId = null;
+async function initCaptcha() {
   try {
-    const h = await api("/api/health");
-    document.getElementById("lamp").className = "lamp " + h.lamp;
-    document.getElementById("health-text").textContent = h.text;
-  } catch (e) {
-    document.getElementById("lamp").className = "lamp red";
-    document.getElementById("health-text").textContent = e.message;
+    const { turnstileSiteKey } = await (await fetch("/public/config")).json();
+    const wait = () => new Promise((r) => (window.turnstile ? r() : setTimeout(() => wait().then(r), 200)));
+    await wait();
+    widgetId = turnstile.render("#captcha", {
+      sitekey: turnstileSiteKey,
+      theme: "dark",
+      callback: (t) => (captchaToken = t),
+      "expired-callback": () => (captchaToken = ""),
+    });
+  } catch (e) { /* form still shows; server will refuse without captcha */ }
+}
+initCaptcha();
+
+const form = document.getElementById("form");
+const status = document.getElementById("status");
+const send = document.getElementById("send");
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const t = T[lang];
+  const data = Object.fromEntries(new FormData(form));
+  if (!data.name.trim() || !data.contact.trim() || !data.message.trim()) {
+    status.className = "status err"; status.textContent = t.st_empty; return;
   }
-}
+  if (!captchaToken) { status.className = "status err"; status.textContent = t.st_captcha; return; }
 
-function rowHtml(a, i) {
-  return `<div class="row" data-id="${esc(a.id)}">
-    <img src="${esc(a.photo)}" alt="" loading="lazy">
-    <div>
-      <div class="t">${i + 1}. ${esc(a.name)}, ${esc(a.year)} ${badge(a.total_score)}</div>
-      <div class="s">${esc(a.price)} ₼ · ${esc(a.city)} · ${a.distance_km ?? "?"} км · ${esc(a.fuel)}${a.credit ? " · кредит" : ""}</div>
-      <div class="s">Баллы рейтинга: ${a.rank}${a.has_ac === 1 ? " · ❄️" : ""}</div>
-    </div>
-  </div>`;
-}
-
-async function showTop() {
-  document.getElementById("title").textContent = "Рейтинг";
-  if (tg) tg.BackButton.hide();
-  app.innerHTML = '<div class="empty">Загрузка…</div>';
+  send.disabled = true; status.className = "status"; status.textContent = t.st_sending;
   try {
-    const { ads } = await api("/api/top");
-    const liked = ads.filter((a) => a.status === "interesting");
-    const fresh = ads.filter((a) => a.status !== "interesting");
-    let html = `<div class="section">Интересно (${liked.length})</div>`;
-    html += liked.length ? liked.map(rowHtml).join("") : '<div class="empty">Пока пусто. Отмечайте 👍 в боте или в карточке.</div>';
-    html += `<div class="section">Новые, без отметки (${fresh.length})</div>`;
-    html += fresh.length ? fresh.map(rowHtml).join("") : '<div class="empty">Новых нет</div>';
-    app.innerHTML = html;
-    app.querySelectorAll(".row").forEach((el) => el.addEventListener("click", () => showAd(el.dataset.id)));
-  } catch (e) {
-    app.innerHTML = `<div class="err">${esc(e.message)}</div>`;
+    const res = await fetch("/public/order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...data, lang, token: captchaToken }),
+    });
+    if (!res.ok) throw new Error(String(res.status));
+    status.className = "status ok"; status.textContent = t.st_ok;
+    form.reset();
+  } catch (err) {
+    status.className = "status err"; status.textContent = t.st_err;
+  } finally {
+    send.disabled = false;
+    captchaToken = "";
+    if (window.turnstile && widgetId !== null) turnstile.reset(widgetId);
   }
-}
-
-async function showAd(id) {
-  document.getElementById("title").textContent = "Машина";
-  if (tg) { tg.BackButton.show(); }
-  app.innerHTML = '<div class="empty">Загрузка…</div>';
-  try {
-    const { ad, review: r, prices } = await api("/api/ad/" + encodeURIComponent(id));
-    const ac = r && r.has_ac === 1 ? "есть" : r && r.has_ac === 0 ? "нет" : "?";
-    const priceLine = prices.map((p) => `${p.price} ₼ (${p.seen_at.slice(0, 10)})`).join(" → ");
-    app.innerHTML = `
-      ${tg ? "" : '<button class="back" id="back">← Назад</button>'}
-      <h2 style="margin:8px 0">${esc(ad.name)}, ${esc(ad.year)}</h2>
-      <div class="gallery">${ad.photos.map((u) => `<img src="${esc(u)}" loading="lazy" alt="">`).join("")}</div>
-      <div class="box kv">
-        <b>Цена</b><span>${esc(ad.price)} ₼${ad.credit ? " · кредит/обмен" : ""}</span>
-        <b>Город</b><span>${esc(ad.city)} · ${ad.distance_km ?? "?"} км</span>
-        <b>Мотор</b><span>${esc(ad.engine)} · ${esc(ad.fuel)}</span>
-        <b>Пробег</b><span>${esc(ad.mileage_km)} км (не верим)</span>
-        <b>История цены</b><span>${esc(priceLine)}</span>
-      </div>
-      ${r ? `<div class="box">
-        <div style="margin-bottom:6px">Оценка ИИ ${badge(r.total_score)}</div>
-        <div class="kv">
-          <b>Кузов</b><span>${r.body_score}/10</span>
-          <b>Ржавчина</b><span>${r.rust_score}/10 (10 = нет)</span>
-          <b>Салон</b><span>${r.interior_score}/10</span>
-          <b>Кондиционер</b><span>${ac}</span>
-        </div>
-        <p><b>ДТП:</b> ${esc(r.accident_signs)}</p>
-        <p><b>Реальный пробег и мотор:</b> ${esc(r.real_mileage_note).replace(/\n/g, "<br>")}</p>
-        <p>${esc(r.summary)}</p>
-      </div>` : ""}
-      <div class="actions">
-        <button id="like" class="${ad.status === "interesting" ? "on" : ""}">👍 Интересно</button>
-        <button id="nope" class="${ad.status === "rejected" ? "on" : ""}">👎 Нет</button>
-      </div>
-      <div class="actions"><a href="#" id="open">Открыть на Turbo.az</a></div>`;
-
-    const mark = async (status) => {
-      await api(`/api/ad/${encodeURIComponent(id)}/mark`, { method: "POST", body: JSON.stringify({ status }) });
-      if (tg) tg.HapticFeedback.notificationOccurred("success");
-      showTop();
-    };
-    document.getElementById("like").onclick = () => mark(ad.status === "interesting" ? "sent" : "interesting");
-    document.getElementById("nope").onclick = () => mark("rejected");
-    document.getElementById("open").onclick = (e) => { e.preventDefault(); openLink(ad.url); };
-    const back = document.getElementById("back");
-    if (back) back.onclick = showTop;
-  } catch (e) {
-    app.innerHTML = `<div class="err">${esc(e.message)}</div>`;
-  }
-}
-
-if (tg) tg.BackButton.onClick(showTop);
-loadHealth();
-showTop();
-setInterval(loadHealth, 60000);
+});
 </script>
 </body>
 </html>

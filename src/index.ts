@@ -16,6 +16,7 @@ import { notifyReviewed } from "./notify/notify";
 import { handleWebhook } from "./telegram/webhook";
 import { tg } from "./telegram/api";
 import { handleApi } from "./api/api";
+import { handleOrder } from "./orders/orders";
 import { checkTurboUrl, fetchTurbo } from "./turbo/fetch";
 import { parseAdPage } from "./turbo/parse-ad";
 import { runSearch } from "./turbo/search";
@@ -26,6 +27,13 @@ export default {
 
     if (pathname === "/tg/webhook" && request.method === "POST") {
       return handleWebhook(request, env);
+    }
+    // Public endpoints for the landing page.
+    if (pathname === "/public/config" && request.method === "GET") {
+      return Response.json({ turnstileSiteKey: env.TURNSTILE_SITE_KEY });
+    }
+    if (pathname === "/public/order" && request.method === "POST") {
+      return handleOrder(request, env);
     }
     if (pathname.startsWith("/api/")) {
       return handleApi(request, env, pathname);
@@ -53,7 +61,7 @@ export default {
               }),
               menuButton: await tg(env.TELEGRAM_BOT_TOKEN, "setChatMenuButton", {
                 chat_id: Number(env.OWNER_TG_ID),
-                menu_button: { type: "web_app", text: "Рейтинг", web_app: { url: `${origin}/` } },
+                menu_button: { type: "web_app", text: "Рейтинг", web_app: { url: `${origin}/app/` } },
               }),
             });
           case "/admin/reviews":
