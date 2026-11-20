@@ -1,0 +1,26 @@
+{
+	"name": "auto-serch",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-11-01",
+	"compatibility_flags": ["nodejs_compat"],
+	// Mini App files. Anything not found here goes to the Worker.
+	"assets": { "directory": "./public" },
+	"vars": {
+		// Only this Telegram user can use the bot and the Mini App
+		"OWNER_TG_ID": "382253447"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "auto-serch",
+			"database_id": "6c5a518e-7144-4dc7-b8ee-1bf7bfb31a22",
+			"migrations_dir": "migrations",
+			"remote": true
+		}
+	],
+	"triggers": {
+		"crons": [
+			"*/15 * * * *"
+		]
+	}
+}

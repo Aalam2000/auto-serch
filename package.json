@@ -1,0 +1,14 @@
+{
+  "name": "auto-serch",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --remote",
+    "deploy": "wrangler deploy --secrets-file .dev.vars"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261118.1",
+    "typescript": "^5.6.0",
+    "wrangler": "^4.0.0"
+  }
+}
